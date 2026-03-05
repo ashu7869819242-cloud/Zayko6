@@ -32,7 +32,7 @@ Zayko is a modern, high-performance web application designed to streamline the c
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/ashu7869819242-cloud/zakko.git
-   cd zakko
+   cd newzakko
    ```
 
 2. **Install dependencies**:

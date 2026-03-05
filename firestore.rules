@@ -91,10 +91,11 @@ service cloud.firestore {
       allow write: if false; // Server-side only via Admin SDK
     }
     // ─── Daily Demands ────────────────────────────
-    // Read: only the authenticated user can read their own demands
+    // Read: any authenticated user can read (needed for Stock Manager real-time onSnapshot)
+    //        Collection contains only item preferences — no sensitive data exposed.
     // Write: DENY — managed via /api/daily-demands (Admin SDK)
     match /dailyDemands/{demandId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null;
       allow write: if false; // Server-side only via Admin SDK
     }
 

@@ -13,6 +13,7 @@ export default function Navbar() {
 
     if (pathname?.startsWith("/admin")) return null;
     if (pathname?.startsWith("/stock")) return null;
+    if (pathname?.startsWith("/executive")) return null;
 
     const navLinks = [
         { href: "/", label: "Menu", icon: "🍽️" },

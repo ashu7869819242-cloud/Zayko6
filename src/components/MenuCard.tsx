@@ -101,7 +101,7 @@ export default function MenuCard({ id, name, price, category, available, quantit
                     transition: 'transform 0.15s ease-out',
                     willChange: 'transform',
                 }}
-                className={`flex flex-col bg-zayko-800/60 border border-white/[0.06] rounded-2xl overflow-hidden group cursor-pointer hover:border-gold-400/20 hover:shadow-[0_8px_30px_rgba(251,191,36,0.08)] ${!available ? "opacity-60 grayscale-[0.3]" : ""}`}
+                className={`flex flex-col bg-zayko-800/60 border border-white/[0.06] rounded-2xl overflow-hidden group cursor-pointer menu-card-premium hover:border-gold-400/20 hover:shadow-[0_8px_30px_rgba(251,191,36,0.08)] ${!available ? "opacity-60 grayscale-[0.3]" : ""}`}
             >
                 {/* Image Section — fixed aspect ratio */}
                 <div className="relative aspect-[4/3] bg-gradient-to-br from-zayko-800 to-zayko-700 overflow-hidden">
@@ -161,7 +161,7 @@ export default function MenuCard({ id, name, price, category, available, quantit
                                             : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                         }`}
                                 >
-                                    {quantity <= 3 ? `🔥 ${quantity} left` : quantity <= 5 ? `⚠️ ${quantity} left` : `✓ ${quantity}`}
+                                    {quantity <= 3 ? <><span className="flame-icon">🔥</span> {quantity} left</> : quantity <= 5 ? `⚠️ ${quantity} left` : `✓ ${quantity}`}
                                 </span>
                                 {customizations && customizations.length > 0 && (
                                     <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">

@@ -339,7 +339,8 @@ Keep it concise and fun with emojis!`;
                         userName: userProfile.name,
                         userEmail: userProfile.email,
                         userPhone: userSnap.data()?.phone || "",
-                        items: cart.map((c: { name: string; quantity: number; unit_price: number }) => ({
+                        items: cart.map((c: { name: string; quantity: number; unit_price: number; item_id: string }) => ({
+                            id: c.item_id, // Store ID for restocking logic
                             name: c.name,
                             quantity: c.quantity,
                             price: c.unit_price,

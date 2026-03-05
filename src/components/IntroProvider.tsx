@@ -15,8 +15,8 @@ export default function IntroProvider({ children }: { children: React.ReactNode 
     const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
-        // Check localStorage on mount
-        const hasSeenIntro = sessionStorage.getItem(INTRO_KEY) || localStorage.getItem(INTRO_KEY);
+        // Show splash once per browser session
+        const hasSeenIntro = sessionStorage.getItem(INTRO_KEY);
 
         if (!hasSeenIntro) {
             setShowIntro(true);
@@ -26,7 +26,7 @@ export default function IntroProvider({ children }: { children: React.ReactNode 
 
     const handleIntroComplete = () => {
         setShowIntro(false);
-        localStorage.setItem(INTRO_KEY, "true");
+        sessionStorage.setItem(INTRO_KEY, "true");
     };
 
     // Avoid flash of content while checking storage

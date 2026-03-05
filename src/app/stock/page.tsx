@@ -84,7 +84,7 @@ export default function StockManagerLoginPage() {
                 </form>
 
                 <p className="text-center text-zayko-600 text-xs mt-6">
-                    Stock Manager Portal • Read-Only Access
+                    Stock Manager Portal • Full Inventory Access
                 </p>
             </div>
         </div>

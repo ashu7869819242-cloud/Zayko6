@@ -67,6 +67,7 @@ const ORDER_KEYWORDS = new Set([
     "de", "do", "dedo", "dena", "bhej", "bhejo", "laga", "lagao",
     "add", "karo", "kardo", "kar", "la", "lao", "lana",
     "rakh", "pack", "bana", "banao", "ready",
+    "ऑर्डर", "चाहिए", "मंगा", "मंगाओ", "कर", "दो", "लाओ", "लाना", "दे", "देना"
 ]);
 
 /**

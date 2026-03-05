@@ -51,31 +51,58 @@ export async function PATCH(req: NextRequest) {
 
         const orderRef = adminDb.collection("orders").doc(orderId);
 
+        // 1. PRE-FETCH ORDER DATA to resolve missing item IDs (Standard point-read)
+        const orderSnap = await orderRef.get();
+        if (!orderSnap.exists) {
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
+        const orderData = orderSnap.data()!;
+        const items = orderData.items || [];
+
+        // 2. Resolve IDs if missing (Legacy support for orders without IDs)
+        if (status === "cancelled") {
+            for (const item of items) {
+                if (!item.id) {
+                    const menuSnap = await adminDb.collection("menuItems").where("name", "==", item.name).limit(1).get();
+                    if (!menuSnap.empty) {
+                        item.id = menuSnap.docs[0].id;
+                    }
+                }
+            }
+        }
+
+        // 3. EXECUTE TRANSACTION
         await adminDb.runTransaction(async (transaction) => {
-            const orderDoc = await transaction.get(orderRef);
-            if (!orderDoc.exists) throw new Error("Order not found");
+            const currentOrderDoc = await transaction.get(orderRef);
+            if (!currentOrderDoc.exists) throw new Error("Order vanished during transaction");
 
-            const orderData = orderDoc.data()!;
-            const oldStatus = orderData.status;
+            const currentOrderData = currentOrderDoc.data()!;
+            const oldStatus = currentOrderData.status;
 
-            // --- 1. HANDLE CANCELLATION & REFUND ---
+            // --- A. HANDLE CANCELLATION & RESTOCKING ---
             if (status === "cancelled") {
                 if (oldStatus === "cancelled") {
                     throw new Error("Order is already cancelled");
                 }
 
-                const userId = orderData.userId;
-                const total = orderData.total;
-                const orderIdDisplay = orderData.orderId;
+                const userId = currentOrderData.userId;
+                const total = currentOrderData.total;
+                const orderIdDisplay = currentOrderData.orderId;
 
-                // Sync Wallet (deduct pending/total if cancelling an active/completed order)
+                // 1. READ/SYNC WALLET FIRST (This has internal transaction.get())
                 await updateCanteenWallet(transaction, oldStatus, "cancelled", total, orderIdDisplay);
 
-                // Update order
-                transaction.update(orderRef, {
-                    status: "cancelled",
-                    updatedAt: new Date().toISOString(),
-                });
+                // 2. NOW PERFORM ALL UPDATES (Restock, Refund, Order Status)
+                for (const item of items) {
+                    if (item.id) {
+                        const itemRef = adminDb.collection("menuItems").doc(item.id);
+                        transaction.update(itemRef, {
+                            quantity: FieldValue.increment(item.quantity),
+                            available: true,
+                            updatedAt: new Date().toISOString(),
+                        });
+                    }
+                }
 
                 // Refund User Wallet
                 const userRef = adminDb.collection("users").doc(userId);
@@ -83,7 +110,7 @@ export async function PATCH(req: NextRequest) {
                     walletBalance: FieldValue.increment(total),
                 });
 
-                // Record Refund Txn for User
+                // Record Refund Txn
                 const txnRef = adminDb.collection("walletTransactions").doc();
                 transaction.set(txnRef, {
                     userId,
@@ -94,17 +121,22 @@ export async function PATCH(req: NextRequest) {
                     createdAt: new Date().toISOString(),
                 });
 
-                return; // End transaction for cancellation block
+                // Final Order Update
+                transaction.update(orderRef, {
+                    status: "cancelled",
+                    updatedAt: new Date().toISOString(),
+                });
+
+                return;
             }
 
-            // --- 2. NORMAL STATUS / PREP TIME UPDATE ---
+            // --- B. NORMAL STATUS / PREP TIME UPDATE ---
             const updateData: Record<string, unknown> = {
                 updatedAt: new Date().toISOString(),
             };
 
             let newStatus = status || oldStatus;
 
-            // When status is set to "ready", clear countdowns
             if (newStatus === "ready") {
                 updateData.readyAt = null;
                 updateData.estimatedReadyAt = null;
@@ -116,7 +148,6 @@ export async function PATCH(req: NextRequest) {
                 updateData.estimatedReadyAt = readyAtISO;
                 updateData.readyAt = readyAtISO;
 
-                // Auto-promote to confirmed if pending and no explicit status sent
                 if (!status && oldStatus === "pending") {
                     newStatus = "confirmed";
                 }
@@ -124,15 +155,7 @@ export async function PATCH(req: NextRequest) {
 
             if (newStatus !== oldStatus) {
                 updateData.status = newStatus;
-
-                // Sync Wallet for status progression
-                await updateCanteenWallet(
-                    transaction,
-                    oldStatus,
-                    newStatus,
-                    orderData.total,
-                    orderData.orderId
-                );
+                await updateCanteenWallet(transaction, oldStatus, newStatus, currentOrderData.total, currentOrderData.orderId);
             }
 
             transaction.update(orderRef, updateData);

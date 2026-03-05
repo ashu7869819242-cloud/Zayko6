@@ -38,14 +38,20 @@ export async function GET(req: NextRequest) {
         console.log("[StockDashboard] Starting demand aggregation...");
 
         // ── 1. Fetch all ACTIVE demand plans ──
-        const plansSnap = await adminDb
-            .collection("userDemandPlans")
-            .where("isActive", "==", true)
-            .get();
+        const [plansSnap, dailyDemandsSnap] = await Promise.all([
+            adminDb
+                .collection("userDemandPlans")
+                .where("isActive", "==", true)
+                .get(),
+            adminDb
+                .collection("dailyDemands")
+                .where("isActive", "==", true)
+                .get(),
+        ]);
 
-        console.log(`[StockDashboard] Found ${plansSnap.size} active demand plans`);
+        console.log(`[StockDashboard] Found ${plansSnap.size} active demand plans, ${dailyDemandsSnap.size} active daily demands`);
 
-        // ── 2. Single-pass aggregation ──
+        // ── 2. Single-pass aggregation (userDemandPlans) ──
         const demandByDay: Record<string, Record<string, number>> = {};
         const weeklyTotals: Record<string, number> = {};
         const activeUserIds = new Set<string>();
@@ -74,6 +80,54 @@ export async function GET(req: NextRequest) {
 
             weeklyTotals[itemName] = (weeklyTotals[itemName] || 0) + quantity * days.length;
         });
+
+        // ── 2b. Aggregate dailyDemands into same structures ──
+        dailyDemandsSnap.forEach((doc) => {
+            const dd = doc.data();
+            activeUserIds.add(dd.userId);
+
+            const itemName: string = dd.itemName || "Unknown";
+            const itemId: string = dd.itemId;
+            const quantity: number = dd.quantity || 0;
+            const days: string[] = dd.days || [];
+
+            itemIdMap[itemName] = itemId;
+
+            for (const day of days) {
+                if (demandByDay[day]) {
+                    demandByDay[day][itemName] = (demandByDay[day][itemName] || 0) + quantity;
+                }
+            }
+
+            weeklyTotals[itemName] = (weeklyTotals[itemName] || 0) + quantity * days.length;
+        });
+
+        // ── 2c. Build live demand summary from dailyDemands ──
+        const liveDemandMap: Record<string, {
+            itemId: string; itemName: string; totalDemand: number; activeUsers: Set<string>;
+        }> = {};
+        dailyDemandsSnap.forEach((doc) => {
+            const dd = doc.data();
+            const key = dd.itemId;
+            if (!liveDemandMap[key]) {
+                liveDemandMap[key] = {
+                    itemId: dd.itemId,
+                    itemName: dd.itemName || "Unknown",
+                    totalDemand: 0,
+                    activeUsers: new Set(),
+                };
+            }
+            liveDemandMap[key].totalDemand += dd.quantity || 0;
+            liveDemandMap[key].activeUsers.add(dd.userId);
+        });
+        const liveDemandSummary = Object.values(liveDemandMap)
+            .map((item) => ({
+                itemId: item.itemId,
+                itemName: item.itemName,
+                totalDemand: item.totalDemand,
+                activeUsers: item.activeUsers.size,
+            }))
+            .sort((a, b) => b.totalDemand - a.totalDemand);
 
         // ── 3. Fetch current stock from menuItems ──
         const uniqueItemIds = [...new Set(Object.values(itemIdMap))];
@@ -188,6 +242,8 @@ export async function GET(req: NextRequest) {
             stockComparison,
             purchasePlan,
             dayChartData,
+            liveDemandSummary,
+            totalActiveDailyDemands: dailyDemandsSnap.size,
         });
     } catch (err) {
         console.error("[StockDashboard] Error:", err);

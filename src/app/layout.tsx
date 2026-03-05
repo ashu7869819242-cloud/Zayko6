@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import JarvisChat from "@/components/JarvisChat";
+import JarvisAssistant from "@/components/JarvisAssistant";
 import PageTransition from "@/components/PageTransition";
 import IntroProvider from "@/components/IntroProvider";
 import { Toaster } from "react-hot-toast";
@@ -39,6 +40,7 @@ export default function RootLayout({
               <Footer />
               <MobileBottomNav />
               <JarvisChat />
+              <JarvisAssistant />
             </IntroProvider>
             <Toaster
               position="top-right"

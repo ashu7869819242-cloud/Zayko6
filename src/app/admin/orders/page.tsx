@@ -99,7 +99,7 @@ export default function AdminOrdersPage() {
         return () => unsubscribe();
     }, []);
 
-    const updateOrder = async (orderId: string, data: { status?: string; prepTime?: number }) => {
+    const updateOrder = async (orderId: string, data: Record<string, any>) => {
         try {
             const token = localStorage.getItem("adminToken");
             const res = await fetch("/api/admin/orders", {
@@ -110,11 +110,16 @@ export default function AdminOrdersPage() {
                 },
                 body: JSON.stringify({ orderId, ...data }),
             });
-            if ((await res.json()).success) {
-                toast.success("Order updated!");
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+                toast.success(result.refunded ? "Order cancelled & Refunded!" : "Order updated!");
+            } else {
+                toast.error(result.error || "Update failed");
             }
-        } catch {
-            toast.error("Failed to update order");
+        } catch (err) {
+            console.error("Update error:", err);
+            toast.error("Network error or server down");
         }
     };
 

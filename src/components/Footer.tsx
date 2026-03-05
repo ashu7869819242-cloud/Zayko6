@@ -1,9 +1,19 @@
 /**
  * Footer — Reusable site-wide footer with author credit.
  * Hidden on mobile (bottom nav replaces it), visible on md+ screens.
+ * Hidden on admin, stock, and executive panels.
  */
 
+"use client";
+import { usePathname } from "next/navigation";
+
 export default function Footer() {
+    const pathname = usePathname();
+
+    if (pathname?.startsWith("/admin")) return null;
+    if (pathname?.startsWith("/stock")) return null;
+    if (pathname?.startsWith("/executive")) return null;
+
     return (
         <footer className="hidden md:block w-full py-4 px-4 text-center border-t border-white/[0.06] bg-zayko-900/80">
             <p className="text-xs text-zayko-500 font-semibold mb-1">⚡ Powered by Zayko</p>

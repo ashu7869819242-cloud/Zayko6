@@ -28,6 +28,7 @@ export default function MobileBottomNav() {
     if (!user) return null;
     if (pathname?.startsWith("/admin")) return null;
     if (pathname?.startsWith("/stock")) return null;
+    if (pathname?.startsWith("/executive")) return null;
     if (pathname?.startsWith("/auth")) return null;
 
     return (

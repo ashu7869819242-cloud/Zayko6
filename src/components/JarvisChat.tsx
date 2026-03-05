@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -38,6 +39,7 @@ interface StructuredResponse {
 export default function JarvisChat() {
     const { user, profile, getIdToken } = useAuth();
     const { items, total, clearCart } = useCart();
+    const pathname = usePathname();
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
@@ -201,6 +203,9 @@ export default function JarvisChat() {
     };
 
     if (!user) return null;
+    if (pathname?.startsWith("/admin")) return null;
+    if (pathname?.startsWith("/stock")) return null;
+    if (pathname?.startsWith("/executive")) return null;
 
     return (
         <>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -158,27 +158,60 @@ export default function MenuPage() {
         </div>
       </motion.div>
 
-      {/* ─── Quick Access ─── */}
+      {/* ─── Quick Access — Premium Animated Cards ─── */}
       <div className="px-4 sm:px-6 max-w-7xl mx-auto mt-4 mb-2">
         <motion.div
-          className="grid grid-cols-3 gap-2.5 sm:gap-4"
+          className="grid grid-cols-4 gap-2.5 sm:gap-4"
           initial="hidden"
           animate="show"
           variants={containerVariants}
         >
-          {[
-            { href: "/dashboard/daily-needs", icon: "📋", label: "Daily Needs", color: "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/20 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]" },
-            { href: "/dashboard/suggest-item", icon: "💡", label: "Suggest", color: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]" },
-            { href: "/dashboard/feedback", icon: "⭐", label: "Feedback", color: "bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border-gold-500/20 hover:shadow-[0_0_20px_rgba(212,160,23,0.15)]" },
-          ].map((item) => (
-            <motion.div key={item.href} variants={itemVariants}>
-              <Link href={item.href}
-                className={`flex flex-col items-center gap-1.5 py-3 sm:py-4 px-2 rounded-2xl border transition-all hover:scale-[1.03] active:scale-[0.97] ${item.color}`}>
-                <span className="text-2xl sm:text-3xl drop-shadow-md">{item.icon}</span>
-                <span className="text-[10px] sm:text-xs font-bold text-center tracking-tight">{item.label}</span>
-              </Link>
-            </motion.div>
-          ))}
+          {/* 1️⃣ Daily Needs — Scrolling marquee text */}
+          <motion.div variants={itemVariants}>
+            <Link href="/dashboard/daily-needs"
+              className="quick-card quick-card-daily flex flex-col items-center gap-1.5 py-3 sm:py-4 px-2 rounded-2xl border border-blue-500/20 bg-blue-500/10 backdrop-blur-md relative overflow-hidden group">
+              <span className="text-2xl sm:text-3xl drop-shadow-md relative z-10 group-hover:scale-125 transition-transform duration-300">📋</span>
+              <span className="text-[10px] sm:text-xs font-bold text-center tracking-tight text-blue-400 relative z-10">Daily Needs</span>
+              {/* Scrolling shimmer overlay */}
+              <div className="absolute inset-0 quick-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </Link>
+          </motion.div>
+
+          {/* 2️⃣ Suggestions — Gradient shift + icon rotate */}
+          <motion.div variants={itemVariants}>
+            <Link href="/suggestions"
+              className="quick-card quick-card-suggestions flex flex-col items-center gap-1.5 py-3 sm:py-4 px-2 rounded-2xl border border-purple-500/20 bg-purple-500/10 backdrop-blur-md relative overflow-hidden group">
+              <span className="text-2xl sm:text-3xl drop-shadow-md relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">🗳️</span>
+              <span className="text-[10px] sm:text-xs font-bold text-center tracking-tight text-purple-400 relative z-10">Suggestions</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-500/0 to-fuchsia-500/0 group-hover:from-purple-500/15 group-hover:via-purple-400/10 group-hover:to-fuchsia-500/15 transition-all duration-500" />
+              {/* Pulse ring */}
+              <div className="absolute inset-0 rounded-2xl quick-pulse-ring opacity-0 group-hover:opacity-100" />
+            </Link>
+          </motion.div>
+
+          {/* 3️⃣ Suggest — Animated color-cycling bulb */}
+          <motion.div variants={itemVariants}>
+            <Link href="/dashboard/suggest-item"
+              className="quick-card quick-card-suggest flex flex-col items-center gap-1.5 py-3 sm:py-4 px-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 backdrop-blur-md relative overflow-hidden group">
+              <span className="text-2xl sm:text-3xl drop-shadow-md relative z-10 bulb-glow">💡</span>
+              <span className="text-[10px] sm:text-xs font-bold text-center tracking-tight text-amber-400 relative z-10">Suggest</span>
+              {/* Animated glow behind bulb */}
+              <div className="absolute top-1 sm:top-2 left-1/2 -translate-x-1/2 w-10 h-10 sm:w-14 sm:h-14 rounded-full bulb-glow-bg" />
+            </Link>
+          </motion.div>
+
+          {/* 4️⃣ Feedback — Floating + bouncing star */}
+          <motion.div variants={itemVariants}>
+            <Link href="/dashboard/feedback"
+              className="quick-card quick-card-feedback flex flex-col items-center gap-1.5 py-3 sm:py-4 px-2 rounded-2xl border border-gold-500/20 bg-gold-500/10 backdrop-blur-md relative overflow-hidden group quick-float">
+              <span className="text-2xl sm:text-3xl drop-shadow-md relative z-10 star-bounce">⭐</span>
+              <span className="text-[10px] sm:text-xs font-bold text-center tracking-tight text-gold-400 relative z-10">Feedback</span>
+              {/* Gradient shift bg */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/0 via-amber-500/0 to-orange-500/0 group-hover:from-gold-500/15 group-hover:via-amber-400/10 group-hover:to-orange-500/15 transition-all duration-700" />
+              {/* Glow border on hover */}
+              <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-gold-400/40 group-hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all duration-500" />
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
 
@@ -245,8 +278,8 @@ export default function MenuPage() {
               All
             </button>
             {categories.map((cat) => (
-              <button key={cat.id} onClick={() => setCategory(cat.name)}
-                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${category === cat.name
+              <button key={cat.id} onClick={() => setCategory(cat.slug)}
+                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${category === cat.slug
                   ? "bg-gold-500 text-zayko-900 shadow-md shadow-gold-500/30"
                   : "bg-white/[0.06] text-zayko-400 border border-white/[0.08] active:scale-95 hover:bg-white/[0.1]"}`}>
                 {cat.name}
